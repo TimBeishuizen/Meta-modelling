@@ -17,8 +17,14 @@ class TestAbstractModel(TestCase):
     __out_par_means = np.mat([2.2, 1.3])
     __out_par_variances = np.mat([0.1, 0.001])
 
-    test_model = Models.AbstractModel(__in_par_intervals, __in_par_means, __in_par_variances, __out_par_intervals,
-                                        __out_par_means, __out_par_variances)
+    def construct_model(self):
+        """ Constructs a meta-model for testing
+
+        :return: A meta-model
+        """
+
+        return Models.AbstractModel(self.__in_par_intervals, self.__in_par_means, self.__in_par_variances,
+                                    self.__out_par_intervals, self.__out_par_means, self.__out_par_variances)
 
     def test_initialization(self):
         """ Tests if the initialization is done correctly. It tests all input for the initialization
@@ -183,49 +189,70 @@ class TestAbstractModel(TestCase):
 
         :return: The meta-model type tested
         """
-        self.failUnlessEqual(self.test_model.get_type(), 'Abstract')
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_type(), 'Abstract')
 
     def test_get_in_par_intervals(self):
         """ Tests whether the function AbstractModel.get_in_par_intervals returns the right values
 
         :return: The meta-model input parameter intervals tested
         """
-        self.failUnlessEqual(self.test_model.get_in_par_intervals().all(), self.__in_par_intervals.all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_in_par_intervals().all(), self.__in_par_intervals.all())
 
     def test_get_in_par_means(self):
         """ Tests whether the function AbstractModel.get_in_par_means returns the right values
 
         :return: The meta-model input parameter means tested
         """
-        self.failUnlessEqual(self.test_model.get_in_par_means().all(), self.__in_par_means.all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_in_par_means().all(), self.__in_par_means.all())
 
     def test_get_in_par_variances(self):
         """ Tests whether the function AbstractModel.get_in_par_variances returns the right values
 
         :return: The meta-model input parameter variances tested
         """
-        self.failUnlessEqual(self.test_model.get_in_par_variances().all(), self.__in_par_variances.all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_in_par_variances().all(), self.__in_par_variances.all())
 
     def test_get_out_par_intervals(self):
         """ Tests whether the function AbstractModel.get_out_par_intervals returns the right values
 
         :return: The meta-model output parameter intervals tested
         """
-        self.failUnlessEqual(self.test_model.get_out_par_intervals().all(), self.__out_par_intervals.all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_out_par_intervals().all(), self.__out_par_intervals.all())
 
     def test_get_out_par_means(self):
         """ Tests whether the function AbstractModel.get_out_par_means returns the right values
 
         :return: The meta-model output parameter means tested
         """
-        self.failUnlessEqual(self.test_model.get_out_par_means().all(), self.__out_par_means.all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_out_par_means().all(), self.__out_par_means.all())
 
     def test_get_out_par_variances(self):
         """ Tests whether the function AbstractModel.get_out_par_variances returns the right values
 
         :return: The meta-model output parameter variances tested
         """
-        self.failUnlessEqual(self.test_model.get_out_par_variances().all(), self.__out_par_variances.all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_out_par_variances().all(), self.__out_par_variances.all())
 
     def test_simulate(self):
         """ Tests whether input of AbstractMode.simulate has the correct input.
@@ -233,19 +260,21 @@ class TestAbstractModel(TestCase):
         :return: The simulated parameter output tested
         """
 
+        test_model = self.construct_model()
+
         # Test if the number of input parameters is the same as for the meta-model
         raw_input_par_1a = np.mat([1.4, 0.25, 0.1])
         raw_input_par_1b = np.mat([1.4])
 
-        self.assertRaises(TypeError, self.test_model.simulate, raw_input_par_1a)
-        self.assertRaises(TypeError, self.test_model.simulate, raw_input_par_1b)
+        self.assertRaises(TypeError, test_model.simulate, raw_input_par_1a)
+        self.assertRaises(TypeError, test_model.simulate, raw_input_par_1b)
 
         # Test if the input parameters are defined correctly
         raw_input_par_2a = 'Not a list'
         raw_input_par_2b = np.mat([1.4, 'Not a float'])
 
-        self.assertRaises(TypeError, self.test_model.simulate, raw_input_par_2a)
-        self.assertRaises(TypeError, self.test_model.simulate, raw_input_par_2b)
+        self.assertRaises(TypeError, test_model.simulate, raw_input_par_2a)
+        self.assertRaises(TypeError, test_model.simulate, raw_input_par_2b)
 
         # Test if the input parameters are in between the intervals and gives a warning if not
         raw_input_par_3a = np.mat([0.4, 0.25])
@@ -253,8 +282,8 @@ class TestAbstractModel(TestCase):
 
         warnings.simplefilter("error")
 
-        self.assertRaises(UserWarning, self.test_model.simulate, raw_input_par_3a)
-        self.assertRaises(UserWarning, self.test_model.simulate, raw_input_par_3b)
+        self.assertRaises(UserWarning, test_model.simulate, raw_input_par_3a)
+        self.assertRaises(UserWarning, test_model.simulate, raw_input_par_3b)
 
         warnings.simplefilter("ignore")
 
@@ -273,8 +302,15 @@ class TestPLSRMetaModel(TestAbstractModel):
     __out_par_means = np.mat([2.2, 1.3])
     __out_par_variances = np.mat([0.1, 0.001])
 
-    test_model = Models.PLSRMetaModel(__sol_mat, __in_par_intervals, __in_par_means, __in_par_variances,
-                                        __out_par_intervals, __out_par_means, __out_par_variances)
+    def construct_model(self):
+        """ Constructs a meta-model for testing
+
+        :return: A meta-model
+        """
+
+        return Models.PLSRMetaModel(self.__sol_mat, self.__in_par_intervals, self.__in_par_means,
+                                    self.__in_par_variances, self.__out_par_intervals, self.__out_par_means,
+                                    self.__out_par_variances)
 
     def test_initialization(self):
         """ A test for the initialization of the PLSRMetaModel
@@ -282,19 +318,19 @@ class TestPLSRMetaModel(TestAbstractModel):
         :return: A PLSR meta-model tested
         """
 
-        def test_sol_mat(sol_mat):
-            self.assertRaises(TypeError, Models.AbstractModel, sol_mat, self.__in_par_means, self.__in_par_means,
+        def test_sol_mat(sol_mat, error):
+            self.assertRaises(error, Models.PLSRMetaModel, sol_mat, self.__in_par_intervals, self.__in_par_means,
                               self.__in_par_variances, self.__out_par_intervals, self.__out_par_means,
                               self.__out_par_variances)
 
         # Check if not the proper input for the sol mat is used
         sol_mat_1 = 'not a list'
-        sol_mat_2 = np.mat([[1, 1], [0.1, 0.01], 'not a list'])
+        sol_mat_2 = np.mat([[0.5, 1.5], 'not a nested list'])
         sol_mat_3 = np.mat([[1, 1], [0.1, 0.01], [0.1, 'no float']])
 
-        test_sol_mat(sol_mat_1)
-        test_sol_mat(sol_mat_2)
-        test_sol_mat(sol_mat_3)
+        test_sol_mat(sol_mat_1, TypeError)
+        test_sol_mat(sol_mat_2, TypeError)
+        test_sol_mat(sol_mat_3, TypeError)
 
         # Check if different sol matrix sizes makes a problem
         sol_mat_4a = np.mat([[1, 1], [0.1, 0.01], [1, 1], [0.1, 0.01]])    # Wrong column size
@@ -302,31 +338,44 @@ class TestPLSRMetaModel(TestAbstractModel):
         sol_mat_5a = np.mat([[1, 1], [0.1, 0.01], [0.1, 0.001, 0.002]])    # Wrong row size
         sol_mat_5b = np.mat([[1, 1], [0.1, 0.01], [0.1]])                  # Wrong row size
 
-        test_sol_mat(sol_mat_4a)
-        test_sol_mat(sol_mat_4b)
-        test_sol_mat(sol_mat_5a)
-        test_sol_mat(sol_mat_5b)
+        warnings.simplefilter("error")
+
+        test_sol_mat(sol_mat_4a, UserWarning)
+        test_sol_mat(sol_mat_4b, TypeError)
+        test_sol_mat(sol_mat_5a, TypeError)
+        test_sol_mat(sol_mat_5b, TypeError)
+
+        warnings.simplefilter("ignore")
 
     def test_get_type(self):
         """ Tests whether the function AbstractModel.get_type returns the right type
 
         :return: The meta-model type tested
         """
-        self.failUnlessEqual(self.test_model.get_type(), 'PLSR')
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_type(), 'PLSR')
 
     def test_get_regress_coeff(self):
         """ Tests whether the function PLSRMetaModel.get_regress_coeff returns the right values
 
         :return: The meta-model regression coefficient tested
         """
-        self.failUnlessEqual(self.test_model.get_regress_coeff().all(), self.__sol_mat[1:].all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_regress_coeff().all(), self.__sol_mat[1:].all())
 
     def test_get_output_const(self):
         """ Tests whether the function PLSRMetaModel.get_output_const returns the right values
 
         :return: The meta-model output constants tested
         """
-        self.failUnlessEqual(self.test_model.get_output_const().all(), self.__sol_mat[0].all())
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_output_const().all(), self.__sol_mat[0].all())
 
     def test_modify_input(self):
         """ Tests if the input is correctly modified
@@ -334,15 +383,26 @@ class TestPLSRMetaModel(TestAbstractModel):
         :return: The modified input tested
         """
 
+        test_model = self.construct_model()
+
         # Since the output is the same for the first and the second, this is just a check if input is the same as output
         raw_input = np.mat([1, 0.4])
-        self.failUnlessEqual(self.test_model.modify_input(raw_input).all(), raw_input.all())
+        self.failUnlessEqual(test_model.modify_input(raw_input).all(), raw_input.all())
 
     def test_calculate_output(self):
         """ Tests if the output is calculated correctly
 
         :return: The calculated output tested
         """
+
+        test_model = self.construct_model()
+
+        # test to find if the regression coefficient size matches the number of input parameters
+        input_par_1 = np.mat([[1.1], [0.4], [1.2]])
+        input_par_2 = np.mat([[1.1]])
+
+        self.assertRaises(TypeError, test_model.calculate_output, input_par_1)
+        self.assertRaises(TypeError, test_model.calculate_output, input_par_2)
 
         # Calculate the right output first and then compare it with the output from the function
         input_par = np.mat([[1.1], [0.4]])
@@ -356,7 +416,7 @@ class TestPLSRMetaModel(TestAbstractModel):
         output_par[0, 1] = self.__sol_mat[0, 1]
         output_par[0, 1] += self.__sol_mat[1, 1] * input_par[0] + self.__sol_mat[2, 1] * input_par[1]
 
-        self.failUnlessEqual(self.test_model.calculate_output(input_par).all(), output_par.all())
+        self.failUnlessEqual(test_model.calculate_output(input_par).all(), output_par.all())
 
 
 class TestDLUMetaModel(TestAbstractModel):
@@ -374,8 +434,15 @@ class TestDLUMetaModel(TestAbstractModel):
     __out_par_means = np.mat([2.2, 1.3])
     __out_par_variances = np.mat([0.1, 0.001])
 
-    test_model = Models.DLUMetaModel(__input_data, __output_data, __in_par_intervals, __in_par_means,
-                                       __in_par_variances, __out_par_intervals, __out_par_means, __out_par_variances)
+    def construct_model(self):
+        """ Constructs a meta-model for testing
+
+        :return: A meta-model
+        """
+
+        return Models.DLUMetaModel(self.__input_data, self.__output_data, self.__in_par_intervals, self.__in_par_means,
+                                   self.__in_par_variances, self.__out_par_intervals, self.__out_par_means,
+                                   self.__out_par_variances)
 
     def test_initialization(self):
         """ A test for the initialization of the DLU MetaModel
@@ -383,57 +450,68 @@ class TestDLUMetaModel(TestAbstractModel):
         :return: A DLU meta-model tested
         """
 
-        def test_databases(input_data, output_data):
-            self.assertRaises(TypeError, Models.AbstractModel, input_data, output_data, self.__in_par_means, self.__in_par_means,
-                              self.__in_par_variances, self.__out_par_intervals, self.__out_par_means,
-                              self.__out_par_variances)
+        def test_databases(input_data, output_data, error):
+            self.assertRaises(error, Models.DLUMetaModel, input_data, output_data, self.__in_par_intervals,
+                              self.__in_par_means, self.__in_par_variances, self.__out_par_intervals,
+                              self.__out_par_means, self.__out_par_variances)
 
         # Check if not the proper input for the input database is used
         input_data_1 = 'not a list'
         input_data_2 = np.mat([[1, 1], [0.1, 0.01], 'not a list'])
         input_data_3 = np.mat([[1, 1], [0.1, 0.01], [0.1, 'no float']])
 
-        test_databases(input_data_1, self.__output_data)
-        test_databases(input_data_2, self.__output_data)
-        test_databases(input_data_3, self.__output_data)
+        test_databases(input_data_1, self.__output_data, TypeError)
+        test_databases(input_data_2, self.__output_data, TypeError)
+        test_databases(input_data_3, self.__output_data, TypeError)
 
         # Check if different input database sizes makes a problem
-        input_data_4a = np.mat([[1, 1], [0.1, 0.01], [1, 1], [0.1, 0.01]])          # Wrong column size
-        input_data_4b = np.mat([[1, 1], [0.1, 0.01]])                               # Wrong column size
+        input_data_4a = np.mat([[1, 1], [0.1, 0.01], [1, 1], [0.1, 0.01], [0.1, 0.01]])          # Wrong column size
+        input_data_4b = np.mat([[1, 1], [0.1, 0.01], [0.1, 0.01]])                               # Wrong column size
         input_data_5a = np.mat([[1, 1, 1], [0.1, 0.01, 1], [0.1, 0.001, 0.002]])    # Wrong row size
         input_data_5b = np.mat([[1], [0.1], [0.1]])                                 # Wrong row size
 
-        test_databases(input_data_4a, self.__output_data)
-        test_databases(input_data_4b, self.__output_data)
-        test_databases(input_data_5a, self.__output_data)
-        test_databases(input_data_5b, self.__output_data)
+        warnings.simplefilter("error")
+
+        test_databases(input_data_4a, self.__output_data, TypeError)
+        test_databases(input_data_4b, self.__output_data, TypeError)
+        test_databases(input_data_5a, self.__output_data, UserWarning)
+        test_databases(input_data_5b, self.__output_data, UserWarning)
+
+        warnings.simplefilter("ignore")
 
         # Check if not the proper output for the output database is used
         output_data_1 = 'not a list'
         output_data_2 = np.mat([[1, 1], [0.1, 0.01], 'not a list'])
         output_data_3 = np.mat([[1, 1], [0.1, 0.01], [0.1, 'no float']])
 
-        test_databases(self.__input_data, output_data_1)
-        test_databases(self.__input_data, output_data_2)
-        test_databases(self.__input_data, output_data_3)
+        test_databases(self.__input_data, output_data_1, TypeError)
+        test_databases(self.__input_data, output_data_2, TypeError)
+        test_databases(self.__input_data, output_data_3, TypeError)
 
         # Check if different output database sizes makes a problem
-        output_data_4a = np.mat([[1, 1], [0.1, 0.01], [1, 1], [0.1, 0.01]])         # Wrong column size
-        output_data_4b = np.mat([[1, 1], [0.1, 0.01]])                              # Wrong column size
+        output_data_4a = np.mat([[1, 1], [0.1, 0.01], [1, 1], [0.1, 0.01], [0.1, 0.01]])         # Wrong column size
+        output_data_4b = np.mat([[1, 1], [0.1, 0.01], [0.1, 0.01]])                              # Wrong column size
         output_data_5a = np.mat([[1, 1, 1], [0.1, 0.01, 1], [0.1, 0.001, 0.002]])   # Wrong row size
         output_data_5b = np.mat([[1], [0.1], [0.1]])                                # Wrong row size
 
-        test_databases(self.__input_data, output_data_4a)
-        test_databases(self.__input_data, output_data_4b)
-        test_databases(self.__input_data, output_data_5a)
-        test_databases(self.__input_data, output_data_5b)
+        warnings.simplefilter("error")
+
+        test_databases(self.__input_data, output_data_4a, TypeError)
+        test_databases(self.__input_data, output_data_4b, TypeError)
+        test_databases(self.__input_data, output_data_5a, UserWarning)
+        test_databases(self.__input_data, output_data_5b, UserWarning)
+
+        warnings.simplefilter("ignore")
 
     def test_get_type(self):
         """ Tests whether the function AbstractModel.get_type returns the right type
 
         :return: The meta-model type tested
         """
-        self.failUnlessEqual(self.test_model.get_type(), 'DLU')
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_type(), 'DLU')
 
     def test_modify_input(self):
         """ Tests if the input is correctly modified
@@ -441,9 +519,11 @@ class TestDLUMetaModel(TestAbstractModel):
         :return: The modified input tested
         """
 
+        test_model = self.construct_model()
+
         # Since the output is the same for the first and the second, this is just a check if input is the same as output
         raw_input = np.mat([1, 0.4])
-        self.failUnlessEqual(self.test_model.modify_input(raw_input).all(), raw_input.all())
+        self.assertEqual(test_model.modify_input(raw_input).all(), raw_input.all())
 
     def test_calculate_output(self):
         """ Tests if the output is calculated correctly
@@ -451,14 +531,23 @@ class TestDLUMetaModel(TestAbstractModel):
         :return: The calculated output tested
         """
 
+        test_model = self.construct_model()
+
+        # test to find if the regression coefficient size matches the number of input parameters
+        input_par_1 = np.mat([[1.1], [0.4], [1.2]])
+        input_par_2 = np.mat([[1.1]])
+
+        self.assertRaises(TypeError, test_model.calculate_output, input_par_1)
+        self.assertRaises(TypeError, test_model.calculate_output, input_par_2)
+
         # Calculate the right output first and then compare it with the output from the function
         input_par_1 = np.mat([[1.1], [0.4]])
         output_par_1 = np.mat([[2.25], [1.35]])
         input_par_2 = np.mat([[0.6], [0.2]])
         output_par_2 = np.mat([[1.75], [1.25]])
 
-        self.failUnlessEqual(self.test_model.calculate_output(input_par_1).all(), output_par_1.all())
-        self.failUnlessEqual(self.test_model.calculate_output(input_par_2).all(), output_par_2.all())
+        self.failUnlessEqual(test_model.calculate_output(input_par_1).all(), output_par_1.all())
+        self.failUnlessEqual(test_model.calculate_output(input_par_2).all(), output_par_2.all())
 
 
 class TestModelDecorator(TestAbstractModel):
@@ -466,7 +555,7 @@ class TestModelDecorator(TestAbstractModel):
 
     """
 
-    # Construct an example Abstract meta-model
+    # Construct an example PLSR meta-model
     __in_par_intervals = np.mat([[0.5, 1.5], [0.2, 0.4]])
     __in_par_means = np.mat([1.2, 0.3])
     __in_par_variances = np.mat([0.1, 0.001])
@@ -474,20 +563,205 @@ class TestModelDecorator(TestAbstractModel):
     __out_par_means = np.mat([2.2, 1.3])
     __out_par_variances = np.mat([0.1, 0.001])
 
-    test_model_basic = Models.AbstractModel(__in_par_intervals, __in_par_means, __in_par_variances, __out_par_intervals,
-                                        __out_par_means, __out_par_variances)
+    def construct_model(self):
+        """ Constructs a meta-model for testing
 
-    test_model = Models.ModelDecorator(test_model_basic)
+        :return: A meta-model
+        """
+
+        meta_model_base = Models.AbstractModel(self.__in_par_intervals, self.__in_par_means, self.__in_par_variances,
+                                               self.__out_par_intervals, self.__out_par_means, self.__out_par_variances)
+
+        return Models.ModelDecorator(meta_model_base)
 
     def test_get_type(self):
         """ Tests whether the function AbstractModel.get_type returns the right type
 
         :return: The meta-model type tested
         """
-        self.failUnlessEqual(self.test_model.get_type(), 'Decorated Abstract')
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_type(), 'Decorated Abstract Abstract')
 
 
 class TestInputDecorator(TestModelDecorator):
-    """
+        """ All test for the Input Decorator to see if this decorator works as it should
+
+        """
+
+        # Construct an example PLSR meta-model
+        __sol_mat = np.mat([[1, 1], [0.1, 0.01], [0.1, 0.001]])
+        __in_par_intervals = np.mat([[0.5, 1.5], [0.2, 0.4]])
+        __in_par_means = np.mat([1.2, 0.3])
+        __in_par_variances = np.mat([0.1, 0.001])
+        __out_par_intervals = np.mat([[1.5, 2.5], [1.2, 1.4]])
+        __out_par_means = np.mat([2.2, 1.3])
+        __out_par_variances = np.mat([0.1, 0.001])
+
+        def construct_model(self):
+            """ Constructs a meta-model for testing
+
+                :return: A meta-model
+            """
+
+            meta_model_base = Models.PLSRMetaModel(self.__sol_mat, self.__in_par_intervals, self.__in_par_means,
+                                               self.__in_par_variances, self.__out_par_intervals, self.__out_par_means,
+                                               self.__out_par_variances)
+
+            return Models.InputDecorator(meta_model_base)
+
+        def test_get_type(self):
+            """ Tests whether the function AbstractModel.get_type returns the right type
+
+            :return: The meta-model type tested
+            """
+
+            test_model = self.construct_model()
+
+            self.failUnlessEqual(test_model.get_type(), 'Decorated Input PLSR')
+
+        def test_calculate_output(self):
+            """ Tests if the calculated output is the correct for this decorator
+
+            """
+
+            test_model = self.construct_model()
+
+            # Calculate the right output first and then compare it with the output from the function
+            input_par = np.mat([[1.1], [0.4]])
+            output_par = np.zeros((1, 2))
+
+            # First output value
+            output_par[0, 0] = self.__sol_mat[0, 0]
+            output_par[0, 0] += self.__sol_mat[1, 0] * input_par[0] + self.__sol_mat[2, 0] * input_par[1]
+
+            # Second output value
+            output_par[0, 1] = self.__sol_mat[0, 1]
+            output_par[0, 1] += self.__sol_mat[1, 1] * input_par[0] + self.__sol_mat[2, 1] * input_par[1]
+
+            self.failUnlessEqual(test_model.calculate_output(input_par).all(), output_par.all())
+
+        def test_get_input_spec(self):
+            """ Tests if the input specifications are past through normally
+
+            """
+
+            test_model = self.construct_model()
+
+            self.failUnlessEqual(test_model.get_input_spec(), 'Abstract')
+
+
+class TestPolynomialInputDecorator(TestInputDecorator):
+    """ All test for the Polynomial Decorator to see if this decorator works as it should
 
     """
+
+    # Construct an example PLSR meta-model
+    __sol_mat = np.mat([[1, 1], [0.1, 0.01], [0.1, 0.001], [1, 1], [0.1, 0.01], [0.1, 0.001]])
+    __in_par_intervals = np.mat([[0.5, 1.5], [0.2, 0.4]])
+    __in_par_means = np.mat([1.2, 0.3])
+    __in_par_variances = np.mat([0.1, 0.001])
+    __out_par_intervals = np.mat([[1.5, 2.5], [1.2, 1.4]])
+    __out_par_means = np.mat([2.2, 1.3])
+    __out_par_variances = np.mat([0.1, 0.001])
+
+    def construct_model(self):
+        """ Constructs a meta-model for testing
+
+            :return: A meta-model
+        """
+
+        meta_model_base = Models.PLSRMetaModel(self.__sol_mat, self.__in_par_intervals, self.__in_par_means,
+                                               self.__in_par_variances, self.__out_par_intervals, self.__out_par_means,
+                                               self.__out_par_variances)
+
+        return Models.PolynomialInputDecorator(meta_model_base)
+
+    def test_get_type(self):
+        """ Tests whether the function AbstractModel.get_type returns the right type
+
+        :return: The meta-model type tested
+        """
+
+        test_model = self.construct_model()
+
+        self.failUnlessEqual(test_model.get_type(), 'Polynomial Input PLSR')
+
+    def test_standardize_input(self):
+        """ Tests if the input is correctly standardized
+
+        :return: A result of the test if it is correctly standardized
+        """
+
+        test_model = self.construct_model()
+
+        # The raw and modified input parameters
+        input_par_1 = np.mat([[1.1], [0.4]])
+
+        mean_par_1 = np.subtract(np.transpose(input_par_1), self.__in_par_means)
+        mod_par_1 = np.divide(mean_par_1, np.sqrt(self.__in_par_variances))
+
+        self.assertEqual(test_model.standardize_input(input_par_1).all(), mod_par_1.all())
+
+    def test_modify_input(self):
+        """ Tests if the input is correctly modified
+
+        :return: A result of the test if it is correctly modified
+        """
+
+        test_model = self.construct_model()
+
+        # The raw and modified input parameters
+        input_par_1 = np.mat([[1.1], [0.4]])
+
+        nr_par = int(input_par_1.shape[0])
+        mod_input_par_1 = np.zeros((nr_par * (nr_par + 3)) / 2)
+
+        mean_par_1 = np.transpose(input_par_1) - self.__in_par_means
+        vari = np.sqrt(self.__in_par_variances)
+        mod_input_par_1[0:nr_par] = np.divide(mean_par_1, vari)
+
+        # Add all terms of the polynomial input parameters to the modified input parameters
+        for i in range(nr_par):
+            for j in range(i, nr_par):
+                mod_input_par_1[((nr_par - 1) * (i + 1) + j + 1)] = mod_input_par_1[i] * mod_input_par_1[j]
+
+        self.assertEqual(test_model.modify_input(input_par_1).all(), mod_input_par_1.all())
+
+
+    def test_calculate_output(self):
+        """ Tests if the calculated output is the correct for this decorator
+
+        """
+
+        test_model = self.construct_model()
+
+        # Calculate the right output first and then compare it with the output from the function
+        input_par = np.mat([[1.1], [0.4]])
+        mod_input_par = test_model.modify_input(input_par)
+
+        var_par =  self.__sol_mat[1:] * input_par
+        output_par = np.add(self.__sol_mat[0] , var_par)
+
+
+
+        # output_par = np.zeros((1, 2))
+
+        # # First output value
+        # output_par[0, 0] = self.__sol_mat[0, 0]
+        # output_par[0, 0] += self.__sol_mat[1, 0] * input_par[0] + self.__sol_mat[2, 0] * input_par[1]
+        #
+        # # Second output value
+        # output_par[0, 1] = self.__sol_mat[0, 1]
+        # output_par[0, 1] += self.__sol_mat[1, 1] * input_par[0] + self.__sol_mat[2, 1] * input_par[1]
+
+        self.failUnlessEqual(test_model.calculate_output(mod_input_par).all(), output_par.all())
+
+    def test_get_input_spec(self):
+        """ Tests if the input specifications are past through normally
+
+        """
+
+        test_model = self.construct_model()
+        self.failUnlessEqual(test_model.get_input_spec(), 'Polynomial')

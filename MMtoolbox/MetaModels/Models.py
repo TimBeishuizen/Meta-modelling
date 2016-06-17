@@ -30,6 +30,8 @@ class AbstractModel:
 
     """
 
+    mm_type = 'Abstract'
+
     def __init__(self, in_par_intervals, in_par_means, in_par_variances,
                  out_par_intervals, out_par_means, out_par_variances):
         """ Initialization for the abstract class meta-model. It contains all information required to produce such a
@@ -127,7 +129,7 @@ class AbstractModel:
 
         :return: A string containing the type of meta-model
         """
-        return self.__mm_type
+        return self.mm_type
 
     def get_in_par_intervals(self):
         """ A method to obtain the input parameter intervals
@@ -235,7 +237,7 @@ class PLSRMetaModel(AbstractModel):
 
     """
 
-    __mm_type = 'PLSR'
+    mm_type = 'PLSR'
 
     def __init__(self, sol_mat, in_par_intervals, in_par_means, in_par_variances,
                  out_par_intervals, out_par_means, out_par_variances):
@@ -265,18 +267,21 @@ class PLSRMetaModel(AbstractModel):
         if not isinstance(sol_mat, np.matrix):
             raise TypeError('the solution matrix is not a matrix')
 
-        # Check if the size of the solution matrix is right
-        if sol_mat.shape[0] != in_par_intervals.shape[1] + 1 or sol_mat.shape[1] != out_par_intervals.shape[1]:
-            raise TypeError('the solution matrix does not have the correct size')
-
         # Check if the values of the solution matrix are numbers
         if not np.all(np.isreal(sol_mat)):
             raise TypeError('the values solution matrix are not real numbers')
 
+        # Check if the size of the solution matrix is right
+        if sol_mat.shape[0] < in_par_intervals.shape[1] + 1 or sol_mat.shape[1] < out_par_intervals.shape[1]:
+            raise TypeError('the solution matrix does not have the correct size')
+
+        # Check if the size of the solution matrix is right
+        if sol_mat.shape[0] > in_par_intervals.shape[1] + 1 or sol_mat.shape[1] > out_par_intervals.shape[1]:
+            warnings.warn('the solution matrix does not have the correct size')
+
         # Add additional variables
-        self.__mm_type = 'PLSR'
         self.__output_const = np.mat(sol_mat[0])
-        self.__regress_coeff = np.transpose(np.mat(sol_mat[1:]))
+        self.__regress_coeff = np.mat(np.transpose(sol_mat[1:]))
 
     def get_regress_coeff(self):
         """ A method to obtain the regression coefficients
@@ -309,6 +314,10 @@ class PLSRMetaModel(AbstractModel):
         :return: The corresponding output
         """
 
+        if input_par.shape[0] != self.__regress_coeff.shape[1]:
+            raise TypeError('The input parameters (%x) and the solution matrix (%x) do not have a matching size' %
+                            (input_par.shape[0], self.__regress_coeff.shape[1]))
+
         output_var = np.transpose(self.__regress_coeff * input_par)
         output_par = self.__output_const + output_var
 
@@ -331,6 +340,8 @@ class DLUMetaModel(AbstractModel):
         __output_data: A database of output combinations linked to the input combinations database, in which the
             corresponding output is searched for
     """
+
+    mm_type = 'DLU'
 
     def __init__(self, input_data, output_data, in_par_intervals, in_par_means, in_par_variances,
                  out_par_intervals, out_par_means, out_par_variances):
@@ -363,7 +374,7 @@ class DLUMetaModel(AbstractModel):
 
         # Checks if the input database has the correct size
         if input_data.shape[1] != in_par_intervals.shape[1]:
-            raise TypeError('the input database does not have the correct size')
+            warnings.warn('the input database does not have the correct size')
 
         # Checks if the input database contains only numbers
         if not np.all(np.isreal(input_data)):
@@ -375,7 +386,7 @@ class DLUMetaModel(AbstractModel):
 
         # Checks if the output database has the correct size
         if output_data.shape[1] != out_par_intervals.shape[1]:
-            raise TypeError('the output database does not have the correct size')
+            warnings.warn('the output database does not have the correct size')
 
         # Checks if the output database contains only numbers
         if not np.all(np.isreal(output_data)):
@@ -405,6 +416,10 @@ class DLUMetaModel(AbstractModel):
         :param input_par: A list of (modified) input parameters
         :return: The corresponding output
         """
+
+        if input_par.shape[0] != self.__input_data.shape[1]:
+            raise TypeError('The input parameters (%x) and the input database (%x) do not have a matching size' %
+                            (input_par.shape[0], self.__input_data.shape[1]))
 
         def find_euc_dist(list_par1, list_par2):
             """ Finds the Euclidian distance between the two parameter points
@@ -441,10 +456,11 @@ class ModelDecorator(AbstractModel):
 
     Attributes:
         __mm_type: The type of the meta-model decoration (In this Decorator class, it is 'Decorated')
-        __meta_model: The meta_model that is decorated
+        meta_model: The meta_model that is decorated
     """
 
-    __mm_type = 'Decorated '
+    meta_model = None
+    mm_type = 'Decorated Abstract '
 
     def __init__(self, meta_model):
         """ The initialization fo the decorator. All attributes will be the same as the original model, with the
@@ -453,7 +469,7 @@ class ModelDecorator(AbstractModel):
         :param meta_model: meta_model is the attribute to be decorated
         """
 
-        self.__meta_model = meta_model
+        self.meta_model = meta_model
 
         AbstractModel.__init__(self, meta_model.get_in_par_intervals(), meta_model.get_in_par_means(),
                                meta_model.get_in_par_variances(), meta_model.get_out_par_intervals(),
@@ -464,7 +480,7 @@ class ModelDecorator(AbstractModel):
 
         :return: decorated meta-model type
         """
-        return self.__mm_type + self.__meta_model.get_type()
+        return self.mm_type + self.meta_model.get_type()
 
     def modify_input(self, raw_input_par):
         """ A method to prepare the raw input parameters to parameters used for calculating the output
@@ -493,8 +509,8 @@ class InputDecorator(ModelDecorator):
     """
 
     # Input modifier specifications
-    __input_spec = 'Abstract'
-    __mm_type = 'Decorated Input '
+    input_spec = 'Abstract'
+    mm_type = 'Decorated Input '
 
     def modify_input(self, raw_input_par):
         """ A method to prepare the raw input parameters to parameters used for calculating the output
@@ -510,28 +526,30 @@ class InputDecorator(ModelDecorator):
         :param input_par: The input parameters used for calculating the output
         :return: The corresponding output parameters to the input parameters
         """
-        return self.__meta_model.calculate_output(input_par)
+        print(input_par)
+
+        return self.meta_model.calculate_output(input_par)
 
     def get_input_spec(self):
         """ Gives the input modifier specifications of this decorator class
 
         :return: The input specifications
         """
-        return self.__input_spec
+        return self.input_spec
 
 
-class PolynomialDecorator(InputDecorator):
-    """ The polynomial input modifier decorator class for all meta-models. This decorator cöass changes the input
+class PolynomialInputDecorator(InputDecorator):
+    """ The polynomial input modifier decorator class for all meta-models. This decorator class changes the input
     parameter by adding polynomial terms to the output
 
     Attributes:
-        __input_spec: The specifications of the input decorations (In this PolynomialDecorator class, it is
+        input_spec: The specifications of the input decorations (In this PolynomialInputDecorator class, it is
             'Polynomial')
-        __mm_type: The type of the meta-model decoration (In this PolynomialDecorator class, it is 'Polynomial Input')
+        mm_type: The type of the meta-model decoration (In this PolynomialInputDecorator class, it is 'Polynomial Input')
     """
 
-    __input_spec = "Polynomial"
-    __mm_type = "Polynomial Input "
+    input_spec = 'Polynomial'
+    mm_type = 'Polynomial Input '
 
     def modify_input(self, raw_input_par):
         """ A method to prepare the raw input parameters to parameters used for calculating the output. In this
@@ -549,7 +567,7 @@ class PolynomialDecorator(InputDecorator):
             for j in range(i, nr_par):
                 mod_input_par[(nr_par - 1) * i + j] = raw_input_par[0, i] * raw_input_par[0, j]
 
-        return self.__meta_model.modify_input(mod_input_par)
+        return self.meta_model.modify_input(mod_input_par)
 
     def standardize_input(self, raw_input_par):
         """ A method to standardize the input parameters. This is done by substracting them by the mean and dividing
@@ -559,11 +577,70 @@ class PolynomialDecorator(InputDecorator):
         :return: The standardized input parameters
         """
 
-        stand_input_par = raw_input_par
-
-        # Standardize by substracting the mean and dividing by the standarad deviations
-        for i in range(raw_input_par.shape[1]):
-            mean_par = raw_input_par[0, i] - self.__in_par_means[0, i]
-            stand_input_par[0, i] = mean_par / pow(self.__in_par_variances[0, i], 1 / 2)
+        # Standardize by substracting the mean and dividing by the standard deviations
+        mean_input_par = raw_input_par - self.meta_model.get_in_par_means()
+        input_std = np.sqrt(self.meta_model.get_in_par_variances())
+        stand_input_par = mean_input_par / input_std
 
         return stand_input_par
+
+
+class ModifiedInputDecorator(InputDecorator):
+    """ The modified input modifier decorator class for all meta-models. This decorator class changes the input
+    parameter by adding predefined modifier terms to the output
+
+    Attributes:
+        input_spec: A list with the specifications of the input decorations. The terms for the input to be modified
+        are logarithm (log), squared (sqr), square root (root), inverse (inv), sine (sin), cosine (cos), tangents (tan)
+        mm_type: The type of the meta-model decoration (In this ModifiedInputDecorator class, it is 'Modified Input')
+    """
+
+    mm_type = 'Polynomial Input '
+
+    def __init__(self, meta_model, input_spec):
+        """ Initialization of the ModifiedInputDecorator class
+
+        :param meta_model: The original meta-model that needs input modification
+        :param input_spec: The specifications of the input modification
+        """
+
+        InputDecorator.__init__(self, meta_model)
+
+        self.input_spec = input_spec
+
+    def modify_input(self, raw_input_par):
+        """ A method to prepare the raw input parameters to parameters used for calculating the output. In this
+        decorator a polynomial version of the input is returned
+
+        :param raw_input_par: A list of the raw input parameters that have to be modified
+        :return: The input parameters with their polynomial parameters added
+        """
+
+        # nr_par = raw_input_par.shape[1]
+        # mod_input_par = self.standardize_input(raw_input_par)
+        #
+        # # Add all terms of the polynomial input parameters to the modified input parameters
+        # for i in range(nr_par):
+        #     for j in range(i, nr_par):
+        #         mod_input_par[(nr_par - 1) * i + j] = raw_input_par[0, i] * raw_input_par[0, j]
+        #
+        # return self.meta_model.modify_input(mod_input_par)
+
+    def add_modifier(self, raw_input_par, input_modifier):
+        """ A modifier of the input parameters
+
+        :param raw_input_par: The original to be modified input parameters
+        :param input_modifier: The modifiers for the parameters
+        :return: Modified input parameters
+        """
+
+        if input_modifier == 'log':
+            mod_input_par = np.log(raw_input_par)
+        elif input_modifier == 'sqr':
+            mod_input_par = pow(raw_input_par, 2)
+        elif input_modifier == 'root':
+            mod_input_par = np.roots(raw_input_par)
+        else:
+            raise ValueError('Not a valid modifier')
+
+        return mod_input_par
