@@ -1,7 +1,14 @@
-import numpy as np
+print('HelloWorld')
 
-x = np.mat([[3,5],[1,2]])
 
-y = sqrt(x)
+def printer2():
+    print('hello world again twice')
 
-print(y)
+
+def printer(ik):
+    print(ik)
+
+
+def scream():
+    print('Eagle says hi')
+
