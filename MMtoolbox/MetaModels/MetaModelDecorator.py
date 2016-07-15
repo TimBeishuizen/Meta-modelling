@@ -2,6 +2,7 @@
 import warnings
 import numpy as np
 from MetaModels import MetaModel as MM
+from MetaModels import RobustnessMethods as RM
 
 
 class ModelDecorator(MM.AbstractModel):
@@ -22,14 +23,14 @@ class ModelDecorator(MM.AbstractModel):
         :param meta_model: meta_model is the attribute to be decorated
         """
 
-        if not isinstance(meta_model, MM.AbstractModel):
-            raise TypeError('the input argument is not a proper meta-model')
+        # Check if the meta-model is actually a meta-model
+        RM.check_if_type(meta_model, MM.AbstractModel, 'The input meta-model')
 
         self.meta_model = meta_model
 
         MM.AbstractModel.__init__(self, meta_model.get_in_par_intervals(), meta_model.get_in_par_means(),
-                               meta_model.get_in_par_variances(), meta_model.get_out_par_intervals(),
-                               meta_model.get_out_par_means(), meta_model.get_out_par_variances())
+                                  meta_model.get_in_par_variances(), meta_model.get_out_par_intervals(),
+                                  meta_model.get_out_par_means(), meta_model.get_out_par_variances())
 
     def get_type(self):
         """ Returns the type of the meta-model as well as the decorator additions
@@ -114,6 +115,9 @@ class PolynomialInputDecorator(InputDecorator):
         :return: The input parameters with their polynomial parameters added
         """
 
+        RM.check_if_matrix(raw_input_par, 'The raw input parameters')
+
+        # Transpose input if the wrong way.
         if raw_input_par.shape[0] > 1:
             raw_input_par = np.transpose(raw_input_par)
 
@@ -165,18 +169,12 @@ class ModifiedInputDecorator(InputDecorator):
         :param meta_model: The original meta-model that needs input modification
         :param input_spec: The specifications of the input modification
         """
-        if not isinstance(input_spec, list):
-            raise TypeError('The input specifications are not in a matrix')
 
-        if not all(isinstance(spec, str) for spec in input_spec):
-            raise TypeError('The input specifications are not strings')
-
-        poss_input_spec = ['log', 'sqr', 'root', 'inv', 'exp', 'sin', 'cos', 'tan']
-
-        for spec in input_spec:
-            if spec not in poss_input_spec:
-                raise ValueError("The input specification (" + spec + ") is not one of the predefined kinds: 'log', "
-                                                                     "'sqr', 'root', 'inv', 'exp', 'sin', 'cos', 'tan'")
+        # Check if the input specifications are correct
+        RM.check_if_type(input_spec, list, 'The input specifications')
+        for i in range(len(input_spec)):
+            RM.check_if_type(input_spec[i], str, 'Input specification %x' % i)
+            RM.check_if_poss_input_spec(input_spec[i], i)
 
         InputDecorator.__init__(self, meta_model)
 
@@ -254,84 +252,93 @@ class ClusterDecorator(ModelDecorator):
         self.meta_model = meta_model
 
         MM.AbstractModel.__init__(self, meta_model.get_in_par_intervals(), meta_model.get_in_par_means(),
-                               meta_model.get_in_par_variances(), meta_model.get_out_par_intervals(),
-                               meta_model.get_out_par_means(), meta_model.get_out_par_variances())
+                                  meta_model.get_in_par_variances(), meta_model.get_out_par_intervals(),
+                                  meta_model.get_out_par_means(), meta_model.get_out_par_variances())
 
-        # Check if the cluster center input is correct
-        if not isinstance(clust_cent, np.matrix) or not np.all(np.isreal(clust_cent)):
-            raise TypeError('The cluster centers are not stored in a matrix with only real numbers')
+        def check_additional_input():
+            """ Checks the additional input
 
-        if meta_model.get_in_par_means().shape[1] < clust_cent.shape[1]:
-            warnings.warn('The number of input parameters for the cluster centers is bigger than the actual number of '
-                          'input parameters')
+            :return: The additional input
+            """
 
-        elif meta_model.get_in_par_means().shape[1] > clust_cent.shape[1]:
-            raise TypeError('The number of input parameters for a cluster is smaller than the actual numbers of input'
-                            'parameters')
+            # Check if the cluster center input is correct
+            RM.check_if_matrix(clust_cent, 'The cluster centers')
+            RM.warn_if_bigger(clust_cent.shape[1], meta_model.get_in_par_means().shape[1],
+                              'The number of input parameters in the cluster centers',
+                              'the number of input parameters - 1')
+            RM.check_if_bigger(clust_cent.shape[1], meta_model.get_in_par_means().shape[1] - 1,
+                               'The number of input parameters',
+                               'the number of input parameters in the cluster centers')
 
-        bounds = meta_model.get_in_par_intervals()
+            bounds = meta_model.get_in_par_intervals()
 
-        for j in range(clust_cent.shape[0]):
-            for i in range(clust_cent.shape[1]):
-                if clust_cent[j, i] > bounds[i, 1] or clust_cent[j, i] < bounds[i, 0]:
-                    raise ValueError('The cluster center parameters are not withing the input parameter intervals')
+            for j in range(clust_cent.shape[0]):
+                for i in range(bounds.shape[0]):
+                    RM.check_if_in_interval(bounds[i], clust_cent[j, i], i, ' In cluster center %x, the value')
 
-        # Check if the additional data is correct
-        if meta_model.get_type() == 'PLSR':  # Additional check-up for PLSR
+            def check_PLSR_input():
+                """ Checks model data of PLSR
 
-            if not isinstance(model_data, np.ndarray) or np.ndim(model_data) != 3 or not np.all(np.isreal(
-                            model_data)):
-                raise TypeError('The cluster solution matrices are not stored in a 3 dimensional array with only real '
-                                'numbers')
+                :return: Checks model data of PLSR
+                """
 
-            if meta_model.get_in_par_means().shape[1] < model_data.shape[1] - 1:
-                warnings.warn('The number of input parameters for the solution matrices of the clusters  is bigger '
-                              'than the actual number of input parameters')
+                RM.check_if_ndim_array(model_data, 3, 'Model data')
+                RM.check_if_bigger(model_data.shape[1], meta_model.get_in_par_means().shape[1],
+                                   'The number of input parameters in the solution matrix',
+                                   'the number of input parameters')
+                RM.warn_if_bigger(model_data.shape[1], meta_model.get_in_par_means().shape[1] + 1,
+                                  'The number of input parameters',
+                                  'the number of input parameters in the solution matrix')
+                RM.check_if_bigger(model_data.shape[2], meta_model.get_out_par_means().shape[1] - 1,
+                                   'The number of output parameters in the solution matrix',
+                                   'the number of output parameters')
+                RM.warn_if_bigger(model_data.shape[2], meta_model.get_out_par_means().shape[1],
+                                  'The number of output parameters',
+                                  'the number of output parameters in the solution matrix')
 
-            elif meta_model.get_in_par_means().shape[1] > model_data.shape[1] - 1:
-                raise TypeError('The number of input parameters for the solution matrices of the clusters is smaller '
-                                'than the actual numbers of input parameters')
+                # Check if the additional data is correct
 
-            if meta_model.get_out_par_means().shape[1] != model_data.shape[2]:
-                raise TypeError('The number of output parameters for the solution matrices of the clusters is not '
-                                'equal to the actual numbers of input parameters')
+            if meta_model.get_type() == 'PLSR':  # Additional check-up for PLSR
+                check_PLSR_input()
 
-        elif meta_model.get_type() == 'DLU':  # Additional check-up for DLU
-            raise TypeError('This part is not implemented yet')
+            elif meta_model.get_type() == 'DLU':  # Additional check-up for DLU
+                raise TypeError('This part is not implemented yet')
 
-            # if not isinstance(model_data, np.ndarray):
-            #     raise TypeError('The cluster input and output data is not stored in a multidimensional array')
-            #
-            # for clust_data in model_data:
-            #
-            #     if not isinstance(clust_data[0], np.matrix) or not isinstance(clust_data[1], np.matrix):
-            #         raise TypeError('One of the input or output databases is not a matrix')
-            #
-            #     if clust_data[0].shape[1] > meta_model.get_in_par_means().shape[1]:
-            #         warnings.warn('The number of input parameters for the input database of the clusters  is bigger '
-            #                       'than the actual number of input parameters')
-            #
-            #     elif clust_data[0].shape[1] < meta_model.get_in_par_means().shape[1]:
-            #         raise TypeError('The number of input parameters for the input database of the clusters is '
-            #                         'smaller than the actual numbers of input parameters')
-            #
-            #     if clust_data[1].shape[1] > meta_model.get_out_par_means().shape[1]:
-            #         raise TypeError('The number of output parameters for the output database of the clusters  is '
-            #                         'bigger than the actual number of output parameters')
-            #
-            #     elif clust_data[1].shape[1] < meta_model.get_out_par_means().shape[1]:
-            #         raise TypeError('The number of output parameters for the output database of the clusters is '
-            #                         'smaller than the actual numbers of output parameters')
-            #
-            #     if clust_data[0].shape[0] != clust_data[1].shape[0]:
-            #         raise TypeError('The number rows in the input and output database differ from each other')
+                # if not isinstance(model_data, np.ndarray):
+                #     raise TypeError('The cluster input and output data is not stored in a multidimensional array')
+                #
+                # for clust_data in model_data:
+                #
+                #     if not isinstance(clust_data[0], np.matrix) or not isinstance(clust_data[1], np.matrix):
+                #         raise TypeError('One of the input or output databases is not a matrix')
+                #
+                #     if clust_data[0].shape[1] > meta_model.get_in_par_means().shape[1]:
+                #         warnings.warn('The number of input parameters for the input database of the clusters  is bigger '
+                #                       'than the actual number of input parameters')
+                #
+                #     elif clust_data[0].shape[1] < meta_model.get_in_par_means().shape[1]:
+                #         raise TypeError('The number of input parameters for the input database of the clusters is '
+                #                         'smaller than the actual numbers of input parameters')
+                #
+                #     if clust_data[1].shape[1] > meta_model.get_out_par_means().shape[1]:
+                #         raise TypeError('The number of output parameters for the output database of the clusters  is '
+                #                         'bigger than the actual number of output parameters')
+                #
+                #     elif clust_data[1].shape[1] < meta_model.get_out_par_means().shape[1]:
+                #         raise TypeError('The number of output parameters for the output database of the clusters is '
+                #                         'smaller than the actual numbers of output parameters')
+                #
+                #     if clust_data[0].shape[0] != clust_data[1].shape[0]:
+                #         raise TypeError('The number rows in the input and output database differ from each other')
 
-        else:  # No check-up is done when the meta-model is an unknown version
-            warnings.warn('The additional cluster data can not be checked, for this kind of meta-model')
+            else:  # No check-up is done when the meta-model is an unknown version
+                warnings.warn('The additional cluster data can not be checked, for this kind of meta-model')
 
-        if clust_cent.shape[0] != model_data.shape[0]:
-            raise TypeError('The number of clusters is different according to the number of cluster centers and'
-                            'solution matrices')
+            RM.check_if_same_size(clust_cent.shape[0], model_data.shape[0],
+                                  'The number of clusters according to the cluster centers',
+                                  'The number of clusters according to the model_data')
+
+        check_additional_input()
 
         self.__clust_cent = clust_cent
         self.__model_data = model_data
@@ -393,9 +400,9 @@ class ClosestClusterDecorator(ClusterDecorator):
         :return: Gives the correct output for this particular input
         """
 
-        if input_par.shape[1] != self.get_clust_cent().shape[1]:
-            raise TypeError('The input parameters (%x) and the input database (%x) do not have a matching size' %
-                            (input_par.shape[0], self.get_clust_cent().shape[1]))
+        RM.check_if_same_size(input_par.shape[1], self.get_clust_cent().shape[1],
+                              'The number of input parameters',
+                              'The number of input parameters according to the meta-model')
 
         def find_euc_dist(list_par1, list_par2):
             """ Finds the Euclidian distance between the two parameter points

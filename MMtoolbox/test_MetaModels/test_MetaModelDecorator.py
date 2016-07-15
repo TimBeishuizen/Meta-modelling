@@ -1,4 +1,3 @@
-from unittest import TestCase
 from MetaModels import MetaModel as MM
 from MetaModels import MetaModelDecorator as MMD
 from test_MetaModels import test_MetaModel as tMM
@@ -113,7 +112,7 @@ class TestInputDecorator(TestModelDecorator):
 
             test_model = self.construct_model()
 
-            self.failUnlessEqual(test_model.get_input_spec(), 'Abstract')
+            self.assertEqual(test_model.get_input_spec(), 'Abstract')
 
 
 class TestPolynomialInputDecorator(TestInputDecorator):
@@ -340,8 +339,6 @@ class TestModifiedInputDecorator(TestInputDecorator):
         input_par = np.mat([[1.1, 0.4]])
         mod_input_par = test_model.modify_input(input_par)
 
-        print(mod_input_par.shape)
-
         var_par = mod_input_par * self.__sol_mat[1:]
         output_par = np.add(self.__sol_mat[0], var_par)
 
@@ -477,7 +474,7 @@ class TestClusterDecorator(TestModelDecorator):
 
         test_init(self.__clust_cent, sol_mat_clust_4, UserWarning)
         test_init(self.__clust_cent, sol_mat_clust_5, TypeError)
-        test_init(self.__clust_cent, sol_mat_clust_6, TypeError)
+        test_init(self.__clust_cent, sol_mat_clust_6, UserWarning)
         test_init(self.__clust_cent, sol_mat_clust_7, TypeError)
 
         warnings.simplefilter("ignore")
@@ -659,7 +656,5 @@ class TestClosestClusterDecorator(TestClusterDecorator):
         output_par_2[0, 1] = self.__sol_mat_clust[1, 0, 1]
         output_par_2[0, 1] += self.__sol_mat_clust[1, 1, 1] * input_par_2[0, 0] + self.__sol_mat_clust[1, 2, 1] * \
                                                                                 input_par_2[0, 1]
-
-        print(test_model.calculate_output(input_par_2))
 
         np.testing.assert_array_equal(test_model.calculate_output(input_par_2), output_par_2)

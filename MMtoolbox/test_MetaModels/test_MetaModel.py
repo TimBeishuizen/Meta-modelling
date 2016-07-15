@@ -1,6 +1,5 @@
 from unittest import TestCase
 from MetaModels import MetaModel as MM
-from MetaModels import MetaModelDecorator as MMD
 import numpy as np
 import warnings
 
@@ -362,7 +361,7 @@ class TestPLSRMetaModel(TestAbstractModel):
 
         test_model = self.construct_model()
 
-        self.failUnlessEqual(test_model.get_type(), 'PLSR')
+        self.assertEqual(test_model.get_type(), 'PLSR')
 
     def test_get_regress_coeff(self):
         """ Tests whether the function PLSRMetaModel.get_regress_coeff returns the right values
@@ -495,7 +494,7 @@ class TestDLUMetaModel(TestAbstractModel):
         test_databases(input_data_4a, self.__output_data, TypeError)
         test_databases(input_data_4b, self.__output_data, TypeError)
         test_databases(input_data_5a, self.__output_data, UserWarning)
-        test_databases(input_data_5b, self.__output_data, UserWarning)
+        test_databases(input_data_5b, self.__output_data, TypeError)
 
         warnings.simplefilter("ignore")
 
@@ -519,7 +518,7 @@ class TestDLUMetaModel(TestAbstractModel):
         test_databases(self.__input_data, output_data_4a, TypeError)
         test_databases(self.__input_data, output_data_4b, TypeError)
         test_databases(self.__input_data, output_data_5a, UserWarning)
-        test_databases(self.__input_data, output_data_5b, UserWarning)
+        test_databases(self.__input_data, output_data_5b, TypeError)
 
         warnings.simplefilter("ignore")
 

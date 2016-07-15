@@ -1,6 +1,6 @@
 # Import numpy for matrices
-import warnings
 import numpy as np
+from MetaModels import RobustnessMethods as RM
 
 
 class AbstractModel:
@@ -49,71 +49,84 @@ class AbstractModel:
                                     parameter intervals)
         """
 
-        # Checks if the intervals for the input parameters is formulated correctly
-        if not isinstance(in_par_intervals, np.matrix) or in_par_intervals.shape[0] != 2:
-            raise TypeError('the input parameter intervals are not in a matrix of the correct size')
-        if not np.all(np.isreal(in_par_intervals)):
-            raise TypeError('The input parameter intervals are not only real numbers')
+        def check_input():
+            """ Checks if the input is robust
 
-        # Checks if the means for the input parameters is formulated correctly
-        if not isinstance(in_par_means, np.matrix) or in_par_means.shape[0] != 1:
-            raise TypeError('the input parameter means are not in a matrix or of the correct size')
-        if not np.all(np.isreal(in_par_means)):
-            raise TypeError('The input parameter means are not only real numbers')
+            :return: A good robust checkup
+            """
+            # Checks if the intervals for the input parameters is formulated correctly
+            RM.check_if_matrix(in_par_intervals, 'The input parameter intervals matrix')
+            RM.check_if_same_size(in_par_intervals.shape[1], 2, 'The input parameter intervals',
+                                  'two: a minimum and maximum value of the interval')
 
-        # Checks if the variances for the input parameters is formulated correctly
-        if not isinstance(in_par_variances, np.matrix) or in_par_variances.shape[0] != 1:
-            raise TypeError('the input parameter variances are not in a matrix or of the correct size')
-        if not np.all(np.isreal(in_par_variances)):
-            raise TypeError('The input parameter variances are not only real numbers')
+            # Checks if the means for the input parameters is formulated correctly
+            RM.check_if_matrix(in_par_means, 'The input parameter means matrix')
+            RM.check_if_same_size(in_par_means.shape[0], 1, 'The input parameter means',
+                                  'one: the value of the mean')
 
-        # Checks if the all input parameter details have the same number of input parameters
-        if not (in_par_intervals.shape[1] == in_par_means.shape[1] == in_par_variances.shape[1]):
-            raise TypeError('different number of input parameters: %x intervals, %x means, %x variances'
-                             % (in_par_intervals.shape[1], in_par_means.shape[1], in_par_variances.shape[1]))
+            # Checks if the means for the input parameters is formulated correctly
+            RM.check_if_matrix(in_par_means, 'The input parameter means matrix')
+            RM.check_if_same_size(in_par_means.shape[0], 1, 'The input parameter means',
+                                  'one: the value of the means')
 
-        # Checks if interval boundaries are showing a positive interval and
-        # checks the means and variances for the input parameters is formulated between their interval boundaries
-        for i in range(in_par_intervals.shape[0]):
-            if in_par_intervals[i, 0] > in_par_intervals[i, 1]:
-                raise ValueError('The interval boundaries of input parameter %x are negative' % i)
-            if in_par_means[0,i] < in_par_intervals[i, 0] or in_par_means[0, i] > in_par_intervals[i, 1]:
-                raise ValueError('mean of input parameter %x are not within interval' % i)
-            if 2 * pow(in_par_variances[0, i], 1 / 2) > (in_par_intervals[i, 1] - in_par_intervals[i, 0]):
-                raise ValueError('variance of input parameter %x is too big for the interval' % i)
+            # Checks if the variances for the input parameters is formulated correctly
+            RM.check_if_matrix(in_par_variances, 'The input parameter variances matrix')
+            RM.check_if_same_size(in_par_variances.shape[0], 1, 'The input parameter variances',
+                                  'one: the value of the variances')
 
-        # Checks if the intervals for the output parameters is formulated correctly
-        if not isinstance(out_par_intervals, np.matrix) or out_par_intervals.shape[0] != 2:
-            raise TypeError('the output parameter intervals are not in a matrix of the correct size')
-        if not np.all(np.isreal(out_par_intervals)):
-            raise TypeError('The output parameter intervals are not only real numbers')
+            # Checks if the all input parameter details have the same number of input parameters
+            RM.check_if_same_size(in_par_intervals.shape[0], in_par_means.shape[1],
+                                  'The number of input parameters for the intervals',
+                                  'as the number of input parameters for the means')
+            RM.check_if_same_size(in_par_variances.shape[1], in_par_means.shape[1],
+                                  'The number of input parameters for the variances',
+                                  'as the number of input parameters for the means')
 
-        # Checks if the means for the outnput parameters is formulated correctly
-        if not isinstance(out_par_means, np.matrix) or out_par_means.shape[0] != 1:
-            raise TypeError('the output parameter means are not in a matrix or of the correct size')
-        if not np.all(np.isreal(out_par_means)):
-            raise TypeError('The output parameter means are not only real numbers')
+            for i in range(in_par_intervals.shape[0]):
+                # Checks if interval boundaries are showing a positive interval
+                RM.check_if_corr_interval(in_par_intervals[i], i)
+                # checks the means and variances for the input parameters is formulated
+                # between their interval boundaries
+                RM.check_if_in_interval(in_par_intervals[i], in_par_means[0, i], i, 'The input parameter mean')
+                RM.check_if_corr_var(in_par_intervals[i], in_par_variances[0, i], i)
 
-        # Checks if the variances for the output parameters is formulated correctly
-        if not isinstance(out_par_variances, np.matrix) or out_par_variances.shape[0] != 1:
-            raise TypeError('the output parameter variances are not in a matrix or of the correct size')
-        if not np.all(np.isreal(out_par_variances)):
-            raise TypeError('The output parameter variances are not only real numbers')
+            # Checks if the intervals for the output parameters is formulated correctly
+            RM.check_if_matrix(out_par_intervals, 'The output parameter intervals matrix')
+            RM.check_if_same_size(out_par_intervals.shape[1], 2, 'The output parameter intervals',
+                                  'two: a minimum and maximum value of the interval')
 
-        # Checks if the all output parameter details have the same number of output parameters
-        if not (out_par_intervals.shape[1] == out_par_means.shape[1] == out_par_variances.shape[1]):
-            raise TypeError('different number of output parameters: %x intervals, %x means, %x variances'
-                             % (out_par_intervals.shape[1], out_par_means.shape[1], out_par_variances.shape[1]))
+            # Checks if the means for the output parameters is formulated correctly
+            RM.check_if_matrix(out_par_means, 'The output parameter means matrix')
+            RM.check_if_same_size(out_par_means.shape[0], 1, 'The output parameter means',
+                                  'one: the value of the mean')
 
-        # Checks if interval boundaries are showing a positive interval and
-        # checks the means and variances for the output parameters is formulated between their interval boundaries
-        for i in range(out_par_intervals.shape[0]):
-            if out_par_intervals[i, 0] > out_par_intervals[i, 1]:
-                raise ValueError('The interval boundaries of output parameter %x are negative' % i)
-            if out_par_means[0, i] < out_par_intervals[i, 0] or out_par_means[0, i] > out_par_intervals[i, 1]:
-                raise ValueError('mean of output parameter %x are not within interval' % i)
-            if 2 * pow(out_par_variances[0, i], 1 / 2) > (out_par_intervals[i, 1] - out_par_intervals[i, 0]):
-                raise ValueError('variance of output parameter %x is too big for the interval' % i)
+            # Checks if the means for the output parameters is formulated correctly
+            RM.check_if_matrix(out_par_means, 'The output parameter means matrix')
+            RM.check_if_same_size(out_par_means.shape[0], 1, 'The output parameter means',
+                                  'one: the value of the means')
+
+            # Checks if the variances for the output parameters is formulated correctly
+            RM.check_if_matrix(out_par_variances, 'The output parameter variances matrix')
+            RM.check_if_same_size(out_par_variances.shape[0], 1, 'The output parameter variances',
+                                  'one: the value of the variances')
+
+            # Checks if the all output parameter details have the same number of output parameters
+            RM.check_if_same_size(out_par_intervals.shape[0], out_par_means.shape[1],
+                                  'The number of output parameters for the intervals',
+                                  'as the number of output parameters for the means')
+            RM.check_if_same_size(out_par_variances.shape[1], out_par_means.shape[1],
+                                  'The number of output parameters for the variances',
+                                  'as the number of output parameters for the means')
+
+            for i in range(out_par_intervals.shape[0]):
+                # Checks if interval boundaries are showing a positive interval
+                RM.check_if_corr_interval(out_par_intervals[i], i)
+                # Checks the means and variances for the output parameters is formulated
+                # between their interval boundaries
+                RM.check_if_in_interval(out_par_intervals[i], out_par_means[0, i], i, 'The output parameter mean')
+                RM.check_if_corr_var(out_par_intervals[i], out_par_variances[0, i], i)
+
+        check_input()
 
         # Add this variables to the model
         self.__in_par_intervals = in_par_intervals
@@ -196,22 +209,12 @@ class AbstractModel:
         :return: The output corresponding to the raw input parameters
         """
 
-        # Checks if the input parameters are in a list
-        if not isinstance(raw_input_par, np.matrix):
-            raise TypeError('The input parameters are not in a list')
-
-        # Checks if the number of input parameters is correct
-        if raw_input_par.shape[1] != self.__in_par_means.shape[1]:
-            raise TypeError('The number of input parameters is different from the meta-model')
-
-        if not np.all(np.isreal(raw_input_par)):
-            raise TypeError('Input parameters are not defined as real numbers')
-
-        # Checks if the input parameters are numbers and are in the predefined intervals
-        for i in range(raw_input_par.shape[1]):
-            if raw_input_par[0, i] < self.__in_par_intervals[i, 0] \
-                    or raw_input_par[0, i] > self.__in_par_intervals[i, 1]:
-                warnings.warn('Input parameter %x is not in between the predefined intervals' % i)
+        # Checks if the input parameters are in a matrix, of the right size and within the predefined intervals
+        RM.check_if_matrix(raw_input_par, 'The input parameters matrix')
+        RM.check_if_same_size(raw_input_par.shape[1], self.__in_par_means.shape[1], 'The number of input parameters',
+                              'the number of input parameters in the meta-model')
+        for i in range(self.__in_par_intervals.shape[0]):
+            RM.warn_if_in_interval(self.__in_par_intervals[i], raw_input_par[0,i], i)
 
         # Retrieve the modified input and calculate the output
         mod_input_par = self.modify_input(raw_input_par)
@@ -263,21 +266,28 @@ class PLSRMetaModel(AbstractModel):
         AbstractModel.__init__(self, in_par_intervals, in_par_means, in_par_variances,
                                out_par_intervals, out_par_means, out_par_variances)
 
-        # Checks if the solution matrix is formulated correctly
-        if not isinstance(sol_mat, np.matrix):
-            raise TypeError('the solution matrix is not a matrix')
+        def check_additional_input():
+            """ Checks the additional input if correct
 
-        # Check if the values of the solution matrix are numbers
-        if not np.all(np.isreal(sol_mat)):
-            raise TypeError('the values solution matrix are not real numbers')
+            :return: Checks the additional input if correct
+            """
 
-        # Check if the size of the solution matrix is right
-        if sol_mat.shape[0] < in_par_intervals.shape[1] + 1 or sol_mat.shape[1] < out_par_intervals.shape[1]:
-            raise TypeError('the solution matrix does not have the correct size')
+            # Checks if the solution matrix is a matrix and of the correct size
+            RM.check_if_matrix(sol_mat, 'The solution matrix')
+            RM.check_if_bigger(sol_mat.shape[0], in_par_means.shape[1],
+                               'The number of input parameters in the solution matrix',
+                               'The number of input parameters in the meta-model')
+            RM.check_if_bigger(sol_mat.shape[1], out_par_means.shape[1] - 1,
+                               'The number of output parameters in the solution matrix',
+                               'The number of output parameters in the meta-model minus 1')
+            RM.warn_if_bigger(sol_mat.shape[0], in_par_means.shape[1] + 1,
+                              'The number of input parameters in the solution matrix',
+                              'The number of input parameters in the meta-model')
+            RM.warn_if_bigger(sol_mat.shape[1], out_par_means.shape[1],
+                              'The number of output parameters in the solution matrix',
+                              'The number of output parameters in the meta-model')
 
-        # Check if the size of the solution matrix is right
-        if sol_mat.shape[0] > in_par_intervals.shape[1] + 1 or sol_mat.shape[1] > out_par_intervals.shape[1]:
-            warnings.warn('the solution matrix does not have the correct size')
+        check_additional_input()
 
         # Add additional variables
         self.__output_const = np.mat(sol_mat[0])
@@ -319,9 +329,9 @@ class PLSRMetaModel(AbstractModel):
         :return: The corresponding output
         """
 
-        if input_par.shape[1] != self.__regress_coeff.shape[0]:
-            raise TypeError('The input parameters (%x) and the solution matrix (%x) do not have a matching size' %
-                            (input_par.shape[0], self.__regress_coeff.shape[1]))
+        # Check if the input parameters and the solution matrix have the same size
+        RM.check_if_same_size(input_par.shape[1], self.__regress_coeff.shape[0], 'The number of input parameters',
+                              'the number of input parameter for the solution matrix')
 
         output_var = input_par * self.__regress_coeff
         output_par = np.add(self.__output_const, output_var)
@@ -373,33 +383,24 @@ class DLUMetaModel(AbstractModel):
         AbstractModel.__init__(self, in_par_intervals, in_par_means, in_par_variances,
                                out_par_intervals, out_par_means, out_par_variances)
 
-        # Checks if the input database is formulated correctly
-        if not isinstance(input_data, np.matrix):
-            raise TypeError('the input database is not a matrix')
+        def check_additional_input():
 
-        # Checks if the input database has the correct size
-        if input_data.shape[1] != in_par_intervals.shape[1]:
-            warnings.warn('the input database does not have the correct size')
+            # Checks if the databases is formulated correctly
+            RM.check_if_matrix(input_data, 'The input database')
+            RM.check_if_matrix(output_data, 'The output database')
+            RM.check_if_bigger(input_data.shape[1], in_par_intervals.shape[1] - 1,
+                               'The number of input parameters in the database', 'The number of input parameters - 1')
+            RM.warn_if_bigger(input_data.shape[1], in_par_intervals.shape[1],
+                              'The number of input parameters in the database', 'The number of input parameters')
+            RM.check_if_bigger(output_data.shape[1], out_par_intervals.shape[1] - 1,
+                               'The number of output parameters in the database', 'The number of output parameters - 1')
+            RM.warn_if_bigger(output_data.shape[1], out_par_intervals.shape[1],
+                              'The number of output parameters in the database', 'The number of output parameters')
+            RM.check_if_same_size(input_data.shape[0], output_data.shape[0],
+                                  'The number of entries in the input database',
+                                  'the number of entries in the output database')
 
-        # Checks if the input database contains only numbers
-        if not np.all(np.isreal(input_data)):
-            raise TypeError('the values of the input database are not real numbers')
-
-        # Checks if the output database is formulated correctly
-        if not isinstance(output_data, np.matrix):
-            raise TypeError('the output database is not a matrix')
-
-        # Checks if the output database has the correct size
-        if output_data.shape[1] != out_par_intervals.shape[1]:
-            warnings.warn('the output database does not have the correct size')
-
-        # Checks if the output database contains only numbers
-        if not np.all(np.isreal(output_data)):
-            raise TypeError('the values of the output database are not real numbers')
-
-        # Checks if the in- and output database have the same size
-        if input_data.shape[0] != output_data.shape[0]:
-            raise TypeError('the output database does not have the correct size')
+        check_additional_input()
 
         # Add additional variables
         self.__mm_type = 'DLU'
@@ -426,9 +427,9 @@ class DLUMetaModel(AbstractModel):
         :return: The corresponding output
         """
 
-        if input_par.shape[1] != self.__input_data.shape[1]:
-            raise TypeError('The input parameters (%x) and the input database (%x) do not have a matching size' %
-                            (input_par.shape[0], self.__input_data.shape[1]))
+        # Tests if the number of input parameters is the same as the input database
+        RM.check_if_same_size(input_par.shape[1], self.__input_data.shape[1],
+                              'The number of input parameters', 'The number of input parameters in the input database')
 
         def find_euc_dist(list_par1, list_par2):
             """ Finds the Euclidian distance between the two parameter points

@@ -1,3 +1,6 @@
+import numpy as np
+
+
 print('HelloWorld')
 
 
@@ -12,3 +15,6 @@ def printer(ik):
 def scream():
     print('Eagle says hi')
 
+
+def returner():
+    return np.mat([[1, 2], [4, 2]])
