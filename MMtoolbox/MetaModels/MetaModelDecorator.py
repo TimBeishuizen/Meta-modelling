@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 from MetaModels import MetaModel as MM
 from MetaModels import RobustnessMethods as RM
+from MetaModels import InputMethods as IM
 
 
 class ModelDecorator(MM.AbstractModel):
@@ -115,23 +116,28 @@ class PolynomialInputDecorator(InputDecorator):
         :return: The input parameters with their polynomial parameters added
         """
 
-        RM.check_if_matrix(raw_input_par, 'The raw input parameters')
+        mod_input_par = IM.polynomialize_input(raw_input_par, self.get_in_par_means(), self.get_in_par_variances())
 
-        # Transpose input if the wrong way.
-        if raw_input_par.shape[0] > 1:
-            raw_input_par = np.transpose(raw_input_par)
+        # RM.check_if_matrix(raw_input_par, 'The raw input parameters')
+        #
+        # # Transpose input if the wrong way.
+        # if raw_input_par.shape[0] > 1:
+        #     raw_input_par = np.transpose(raw_input_par)
+        #
+        # nr_par = int(raw_input_par.shape[1])
+        # nr_mod_par = int(2 * nr_par + (nr_par * nr_par - 1) / 2) - 1
+        # mod_input_par = np.mat(np.zeros(nr_mod_par))
+        # stand_par = self.standardize_input(raw_input_par)
+        # mod_input_par[0, range(nr_par)] = stand_par[0]
+        #
+        # # Add all terms of the polynomial input parameters to the modified input parameters
+        # next_par = nr_par
+        # for i in range(nr_par):
+        #     for j in range(i, nr_par):
+        #         mod_input_par[0, next_par] = mod_input_par[0, i] * mod_input_par[0, j]
+        #         next_par += 1
 
-        nr_par = int(raw_input_par.shape[1])
-        mod_input_par = np.mat(np.zeros((pow(nr_par, 2) + 3 * nr_par) / 2))
-        stand_par = self.standardize_input(raw_input_par)
-        mod_input_par[0, range(nr_par)] = stand_par[0]
-
-        # Add all terms of the polynomial input parameters to the modified input parameters
-        for i in range(nr_par):
-            for j in range(i, nr_par):
-                mod_input_par[0, nr_par * (i + 1) + j - i] = mod_input_par[0, i] * mod_input_par[0, j]
-
-        return self.meta_model.modify_input(mod_input_par)
+        return mod_input_par
 
     def standardize_input(self, raw_input_par):
         """ A method to standardize the input parameters. This is done by substracting them by the mean and dividing
@@ -141,12 +147,14 @@ class PolynomialInputDecorator(InputDecorator):
         :return: The standardized input parameters
         """
 
-        # Standardize by substracting the mean and dividing by the standard deviations
-        mean_input_par = np.subtract(raw_input_par, self.meta_model.get_in_par_means())
+        stand_input_par = IM.standardize_input(raw_input_par, self.get_in_par_means(), self.get_in_par_variances())
 
-        input_std = np.sqrt(self.meta_model.get_in_par_variances())
-
-        stand_input_par = np.divide(mean_input_par, input_std)
+        # # Standardize by substracting the mean and dividing by the standard deviations
+        # mean_input_par = np.subtract(raw_input_par, self.meta_model.get_in_par_means())
+        #
+        # input_std = np.sqrt(self.meta_model.get_in_par_variances())
+        #
+        # stand_input_par = np.divide(mean_input_par, input_std)
 
         return stand_input_par
 
@@ -188,44 +196,46 @@ class ModifiedInputDecorator(InputDecorator):
         :return: The input parameters with their polynomial parameters added
         """
 
-        def add_modifier(raw_par, input_modifier):
-            """ A modifier of the input parameters
+        mod_input_par = IM.modify_input(raw_input_par, self.input_spec)
 
-            :param raw_par: The original to be modified input parameters
-            :param input_modifier: The modifiers for the parameters
-            :return: Modified input parameters
-            """
+        # def add_modifier(raw_par, input_modifier):
+        #     """ A modifier of the input parameters
+        #
+        #     :param raw_par: The original to be modified input parameters
+        #     :param input_modifier: The modifiers for the parameters
+        #     :return: Modified input parameters
+        #     """
+        #
+        #     if input_modifier == 'log':
+        #         mod_par = np.log(raw_par)
+        #     elif input_modifier == 'sqr':
+        #         mod_par = np.square(raw_par)
+        #     elif input_modifier == 'root':
+        #         mod_par = np.sqrt(raw_par)
+        #     elif input_modifier == 'inv':
+        #         mod_par = np.power(raw_par, -1)
+        #     elif input_modifier == 'exp':
+        #         mod_par = np.exp(raw_par)
+        #     elif input_modifier == 'sin':
+        #         mod_par = np.sin(raw_par)
+        #     elif input_modifier == 'cos':
+        #         mod_par = np.cos(raw_par)
+        #     elif input_modifier == 'tan':
+        #         mod_par = np.tan(raw_par)
+        #     else:
+        #         raise ValueError('Not a valid modifier')
+        #
+        #     return mod_par
+        #
+        # nr_par = int(raw_input_par.shape[1])
+        #
+        # mod_input_par = np.mat(np.zeros(nr_par * (len(self.input_spec) + 1)))
+        # mod_input_par[0, 0:nr_par] = raw_input_par
+        #
+        # for i in range(len(self.input_spec)):
+        #     mod_input_par[0, nr_par * (i+1):  (i+1) * nr_par] = add_modifier(raw_input_par, self.input_spec[i])
 
-            if input_modifier == 'log':
-                mod_par = np.log(raw_par)
-            elif input_modifier == 'sqr':
-                mod_par = np.square(raw_par)
-            elif input_modifier == 'root':
-                mod_par = np.sqrt(raw_par)
-            elif input_modifier == 'inv':
-                mod_par = np.power(raw_par, -1)
-            elif input_modifier == 'exp':
-                mod_par = np.exp(raw_par)
-            elif input_modifier == 'sin':
-                mod_par = np.sin(raw_par)
-            elif input_modifier == 'cos':
-                mod_par = np.cos(raw_par)
-            elif input_modifier == 'tan':
-                mod_par = np.tan(raw_par)
-            else:
-                raise ValueError('Not a valid modifier')
-
-            return mod_par
-
-        nr_par = int(raw_input_par.shape[1])
-
-        mod_input_par = np.mat(np.zeros(nr_par * (len(self.input_spec) + 1)))
-        mod_input_par[0, 0:nr_par] = raw_input_par
-
-        for i in range(len(self.input_spec)):
-            mod_input_par[0, 2*(i+1):  2*(i+1) + nr_par] = add_modifier(raw_input_par, self.input_spec[i])
-
-        return self.meta_model.modify_input(mod_input_par)
+        return mod_input_par
 
 
 class ClusterDecorator(ModelDecorator):

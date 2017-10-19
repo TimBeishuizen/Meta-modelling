@@ -350,7 +350,7 @@ class DLUMetaModel(AbstractModel):
             after which the respective output is returned
 
     Attributes:
-        __mm_type: The type of the meta-model (In this PLSR class, it is 'PLSR')
+        __mm_type: The type of the meta-model (In this DLU class, it is 'DLU')
         __input_data: A database of different input combinations to be checked for closest resemblance new input
         __output_data: A database of output combinations linked to the input combinations database, in which the
             corresponding output is searched for
@@ -389,13 +389,13 @@ class DLUMetaModel(AbstractModel):
             RM.check_if_matrix(input_data, 'The input database')
             RM.check_if_matrix(output_data, 'The output database')
             RM.check_if_bigger(input_data.shape[1], in_par_intervals.shape[1] - 1,
-                               'The number of input parameters in the database', 'The number of input parameters - 1')
+                               'The number of input lines in the database', 'The number of input parameters - 1')
             RM.warn_if_bigger(input_data.shape[1], in_par_intervals.shape[1],
-                              'The number of input parameters in the database', 'The number of input parameters')
+                              'The number of input lines in the database', 'The number of input parameters')
             RM.check_if_bigger(output_data.shape[1], out_par_intervals.shape[1] - 1,
-                               'The number of output parameters in the database', 'The number of output parameters - 1')
+                               'The number of output lines in the database', 'The number of output parameters - 1')
             RM.warn_if_bigger(output_data.shape[1], out_par_intervals.shape[1],
-                              'The number of output parameters in the database', 'The number of output parameters')
+                              'The number of output lines in the database', 'The number of output parameters')
             RM.check_if_same_size(input_data.shape[0], output_data.shape[0],
                                   'The number of entries in the input database',
                                   'the number of entries in the output database')

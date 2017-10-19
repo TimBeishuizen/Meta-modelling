@@ -179,7 +179,7 @@ class TestPolynomialInputDecorator(TestInputDecorator):
         input_par_1 = np.mat([[1.1, 0.4]])
 
         nr_par = int(input_par_1.shape[1])
-        mod_input_par_1 = np.mat(np.zeros((pow(nr_par, 2) + 3 * nr_par) / 2))
+        mod_input_par_1 = np.mat(np.zeros(int((pow(nr_par, 2) + 3 * nr_par) / 2)))
         stand_par = test_model.standardize_input(input_par_1)
         mod_input_par_1[0, range(nr_par)] = stand_par[0]
 

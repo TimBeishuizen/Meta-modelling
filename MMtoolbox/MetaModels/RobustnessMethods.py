@@ -4,6 +4,9 @@
 
 import warnings
 import numpy as np
+import os
+from MetaModels import MetaModel as MM
+
 
 
 def check_if_matrix(matrix, name):
@@ -166,3 +169,38 @@ def check_if_poss_input_spec(input_spec, i):
     if not (input_spec in poss_input_spec):
         raise ValueError('Input specification %x : ' % i + input_spec +
                          ' not in the list of available input specifications')
+
+
+def check_if_meta_model(meta_model, name):
+    """ Checks if the given meta model is actually a meta-model
+    
+    :param meta_model: The to be checked meta-model
+    :param name: the name of the meta-model
+    :return: The answer of the check
+    """
+
+    if not isinstance(meta_model, MM.AbstractModel):
+        raise TypeError(name + ' is not a meta_model')
+
+
+def check_if_string(text, name):
+    """ Checks if the given string is actually a string
+
+    :param text: The to be checked string
+    :param name: the name of the string
+    :return: The answer of the check
+    """
+
+    if not isinstance(text, str):
+        raise TypeError(name + ' is not a string')
+
+def check_if_file_exists(file_name, check):
+    """ Checks if a file already exists
+    
+    :param file_name: the name of the file
+    :param check: Whether it should or should not exist
+    :return: answer to the check
+    """
+
+    if os.path.exists(file_name) != check:
+        raise NameError(file_name + " does not exist while it should or does exist while it should not")
